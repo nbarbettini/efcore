@@ -33,6 +33,16 @@ public abstract class NorthwindAggregateOperatorsQueryTestBase<TFixture> : Query
                 .Select(o => new ProjectedType { Order = o.OrderID, Customer = o.CustomerID }),
             predicate: p => p.Customer == "ALFKI");
 
+    [ConditionalTheory]
+    [MemberData(nameof(IsAsyncData))]
+    public virtual Task Select_All_unmapped(bool async)
+        => AssertAll(
+            async,
+            ss => ss.Set<UnmappedOrder>().Select(o => new ProjectedType { Order = o.OrderID, Customer = o.CustomerID }),
+            ss => ss.Set<Order>().Select(o => new ProjectedType { Order = o.OrderID, Customer = o.CustomerID }),
+            actualPredicate: p => p.Customer == "ALFKI",
+            expectedPredicate: p => p.Customer == "ALFKI");
+
     private class ProjectedType
     {
         public int Order { get; set; }

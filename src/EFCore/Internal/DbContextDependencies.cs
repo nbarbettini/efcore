@@ -34,6 +34,7 @@ public sealed record DbContextDependencies : IDbContextDependencies
         ICurrentDbContext currentContext,
         IChangeDetector changeDetector,
         IDbSetSource setSource,
+        IAdHocMapper adHocMapper,
         IEntityFinderSource entityFinderSource,
         IEntityGraphAttacher entityGraphAttacher,
         IAsyncQueryProvider queryProvider,
@@ -44,6 +45,7 @@ public sealed record DbContextDependencies : IDbContextDependencies
     {
         ChangeDetector = changeDetector;
         SetSource = setSource;
+        AdHocMapper = adHocMapper;
         EntityGraphAttacher = entityGraphAttacher;
         QueryProvider = queryProvider;
         StateManager = stateManager;
@@ -60,6 +62,14 @@ public sealed record DbContextDependencies : IDbContextDependencies
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
     public IDbSetSource SetSource { get; init; }
+
+    /// <summary>
+    ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+    ///     the same compatibility standards as public APIs. It may be changed or removed without notice in
+    ///     any release. You should only use it directly in your code with extreme caution and knowing that
+    ///     doing so can result in application failures when updating to a new Entity Framework Core release.
+    /// </summary>
+    public IAdHocMapper AdHocMapper { get; init; }
 
     /// <summary>
     ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to

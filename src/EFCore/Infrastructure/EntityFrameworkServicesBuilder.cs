@@ -122,6 +122,7 @@ public class EntityFrameworkServicesBuilder
             { typeof(IQueryTranslationPostprocessorFactory), new ServiceCharacteristics(ServiceLifetime.Scoped) },
             { typeof(IShapedQueryCompilingExpressionVisitorFactory), new ServiceCharacteristics(ServiceLifetime.Scoped) },
             { typeof(IDbContextLogger), new ServiceCharacteristics(ServiceLifetime.Scoped) },
+            { typeof(IAdHocMapper), new ServiceCharacteristics(ServiceLifetime.Scoped) },
             { typeof(ILazyLoader), new ServiceCharacteristics(ServiceLifetime.Transient) },
             { typeof(IParameterBindingFactory), new ServiceCharacteristics(ServiceLifetime.Singleton, multipleRegistrations: true) },
             { typeof(ITypeMappingSourcePlugin), new ServiceCharacteristics(ServiceLifetime.Singleton, multipleRegistrations: true) },
@@ -301,6 +302,7 @@ public class EntityFrameworkServicesBuilder
         TryAdd<IQueryTranslationPostprocessorFactory, QueryTranslationPostprocessorFactory>();
         TryAdd<INavigationExpansionExtensibilityHelper, NavigationExpansionExtensibilityHelper>();
         TryAdd<IExceptionDetector, ExceptionDetector>();
+        TryAdd<IAdHocMapper, AdHocMapper>();
 
         TryAdd(
             p => p.GetService<IDbContextOptions>()?.FindExtension<CoreOptionsExtension>()?.DbContextLogger
@@ -338,7 +340,8 @@ public class EntityFrameworkServicesBuilder
             .AddDependencyScoped<ValueGeneratorSelectorDependencies>()
             .AddDependencyScoped<DatabaseDependencies>()
             .AddDependencyScoped<ModelDependencies>()
-            .AddDependencyScoped<ModelCreationDependencies>();
+            .AddDependencyScoped<ModelCreationDependencies>()
+            .AddDependencyScoped<AdHocMapperDependencies>();
 
         ServiceCollectionMap.TryAddSingleton<IRegisteredServices>(
             new RegisteredServices(ServiceCollectionMap.ServiceCollection.Select(s => s.ServiceType)));

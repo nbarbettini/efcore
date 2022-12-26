@@ -4,7 +4,6 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 
 namespace Microsoft.EntityFrameworkCore.Internal;
@@ -29,6 +28,7 @@ public class InternalDbSet<[DynamicallyAccessedMembers(IEntityType.DynamicallyAc
     private EntityQueryable<TEntity>? _entityQueryable;
     private LocalView<TEntity>? _localView;
     private IEntityFinder<TEntity>? _finder;
+    private IAdHocMapper? _adHocMapper;
 
     /// <summary>
     ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
@@ -70,15 +70,17 @@ public class InternalDbSet<[DynamicallyAccessedMembers(IEntityType.DynamicallyAc
                     throw new InvalidOperationException(CoreStrings.InvalidSetSharedType(typeof(TEntity).ShortDisplayName()));
                 }
 
-                var findSameTypeName = _context.Model.FindSameTypeNameWithDifferentNamespace(typeof(TEntity));
-                //if the same name exists in your entity types we will show you the full namespace of the type
-                if (!string.IsNullOrEmpty(findSameTypeName))
-                {
-                    throw new InvalidOperationException(
-                        CoreStrings.InvalidSetSameTypeWithDifferentNamespace(typeof(TEntity).DisplayName(), findSameTypeName));
-                }
+                _entityType = AdHocMapper.MapAdHocEntityType(typeof(TEntity));
 
-                throw new InvalidOperationException(CoreStrings.InvalidSetType(typeof(TEntity).ShortDisplayName()));
+                // var findSameTypeName = _context.Model.FindSameTypeNameWithDifferentNamespace(typeof(TEntity));
+                // // If the same name exists in your entity types we will show you the full namespace of the type
+                // if (!string.IsNullOrEmpty(findSameTypeName))
+                // {
+                //     throw new InvalidOperationException(
+                //         CoreStrings.InvalidSetSameTypeWithDifferentNamespace(typeof(TEntity).DisplayName(), findSameTypeName));
+                // }
+                //
+                // throw new InvalidOperationException(CoreStrings.InvalidSetType(typeof(TEntity).ShortDisplayName()));
             }
 
             if (_entityType.IsOwned())
@@ -465,6 +467,9 @@ public class InternalDbSet<[DynamicallyAccessedMembers(IEntityType.DynamicallyAc
             return _finder;
         }
     }
+
+    private IAdHocMapper AdHocMapper
+        => _adHocMapper ??= _context.GetDependencies().AdHocMapper;
 
     /// <summary>
     ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to

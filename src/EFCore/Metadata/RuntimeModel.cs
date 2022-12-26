@@ -38,6 +38,7 @@ public class RuntimeModel : AnnotatableBase, IRuntimeModel
 
     private readonly ConcurrentDictionary<Type, PropertyInfo?> _indexerPropertyInfoMap = new();
     private readonly ConcurrentDictionary<Type, string> _clrTypeNameMap = new();
+    private readonly ConcurrentDictionary<string, RuntimeEntityType> _adHocEntityTypes = new();
 
     /// <summary>
     ///     Sets a value indicating whether <see cref="ChangeTracker.DetectChanges" /> should be called.
@@ -103,6 +104,13 @@ public class RuntimeModel : AnnotatableBase, IRuntimeModel
     }
 
     /// <summary>
+    ///     Adds an ad-hoc entity type to the model.
+    /// </summary>
+    /// <param name="entityType">The entity type.</param>
+    public virtual RuntimeEntityType GetOrAddAdHocEntityType(RuntimeEntityType entityType)
+        => _adHocEntityTypes.GetOrAdd(entityType.Name, entityType);
+
+    /// <summary>
     ///     Gets the entity type with the given name. Returns <see langword="null" /> if no entity type with the given name is found
     ///     or the given CLR type is being used by shared type entity type
     ///     or the entity type has a defining navigation.
@@ -112,7 +120,9 @@ public class RuntimeModel : AnnotatableBase, IRuntimeModel
     public virtual RuntimeEntityType? FindEntityType(string name)
         => _entityTypes.TryGetValue(name, out var entityType)
             ? entityType
-            : null;
+            : _adHocEntityTypes.TryGetValue(name, out entityType)
+                ? entityType
+                : null;
 
     private RuntimeEntityType? FindEntityType(Type type)
         => FindEntityType(GetDisplayName(type));

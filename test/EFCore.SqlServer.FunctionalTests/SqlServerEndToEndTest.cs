@@ -12,6 +12,159 @@ using System.Runtime.CompilerServices;
 // ReSharper disable InconsistentNaming
 namespace Microsoft.EntityFrameworkCore;
 
+public class ScratchTest
+{
+    private readonly ITestOutputHelper _testOutputHelper;
+
+    public ScratchTest(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
+
+    [ConditionalFact]
+    public void Main()
+    {
+        using (var context = new NormalContext(_testOutputHelper))
+        {
+            context.Database.EnsureDeleted();
+            context.Database.EnsureCreated();
+
+            context.Add(
+                new Blog
+                {
+                    Name = "1unicorn2",
+                    Posts =
+                    {
+                        new()
+                        {
+                            Title = "Post 1",
+                            Content = new string('A', 10),
+                            CreatedOn = DateTime.UtcNow
+                        },
+                        new()
+                        {
+                            Title = "Post 2",
+                            Content = new string('B', 10),
+                            CreatedOn = DateTime.UtcNow
+                        },
+                        new()
+                        {
+                            Title = "Post 3",
+                            Content = new string('C', 10),
+                            CreatedOn = DateTime.UtcNow
+                        },
+                    }
+                });
+
+            context.SaveChanges();
+        }
+
+        using (var context = new EmptyContext(_testOutputHelper))
+        {
+            var posts = context.Set<PostDto>().FromSql($"select * from Posts").Where(p => p.Key > 1).ToList();
+
+            foreach (var post in posts)
+            {
+                _testOutputHelper.WriteLine($"{post.Key}: {post.Title}, {post.Content}, {post.Featured}, {post.CreatedOn}, {post.UpdatedOn}, {post.Featured}, {post.BlogId}");
+            }
+
+            var posts2 = context.Set<PostDto>().ToList();
+
+            foreach (var post in posts2)
+            {
+                _testOutputHelper.WriteLine($"{post.Key}: {post.Title}, {post.Content}, {post.Featured}, {post.CreatedOn}, {post.UpdatedOn}, {post.Featured}, {post.BlogId}");
+            }
+
+        }
+    }
+
+    public class Blog
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public List<Post> Posts { get; } = new();
+    }
+
+    public class Post
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string Content { get; set; }
+        public DateTime CreatedOn { get; set; }
+        public DateTime? UpdatedOn { get; set; }
+        public bool Featured { get; set; }
+
+        public DateTime CreateOrUpdated
+            => UpdatedOn ?? CreatedOn;
+
+        public int? BlogId  { get; set; }
+        public Blog Blog  { get; set; }
+    }
+
+    [Table("Posts")]
+    public class PostDto
+    {
+        [Column("Id")]
+        public int Key { get; set; }
+        public string Title { get; set; }
+        public string Content { get; set; }
+        public DateTime CreatedOn { get; set; }
+        public DateTime? UpdatedOn { get; set; }
+        public bool Featured { get; set; }
+
+        public DateTime CreateOrUpdated
+            => UpdatedOn ?? CreatedOn;
+
+        public int? BlogId  { get; set; }
+
+        [NotMapped]
+        public Blog Blog  { get; set; }
+    }
+
+    public class NormalContext : DbContext
+    {
+        private readonly ITestOutputHelper _testOutputHelper;
+
+        public NormalContext(ITestOutputHelper testOutputHelper)
+        {
+            _testOutputHelper = testOutputHelper;
+        }
+
+        public DbSet<Blog> Blogs => Set<Blog>();
+        public DbSet<Post> Posts => Set<Post>();
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+            => optionsBuilder
+                //.UseNpgsql("Server=127.0.0.1;Port=5432;Database=myDataBase;User Id=myUsername;Password=myPassword;")
+                //.UseSqlite(@"Data Source=c:\local\test.db")
+                //.UseInMemoryDatabase("Test")
+                // .UseLazyLoadingProxies()
+                .UseSqlServer(@"Data Source=(LocalDb)\MSSQLLocalDB;Database=AllTogetherNow")
+                .LogTo(_testOutputHelper.WriteLine, LogLevel.Information)
+                .EnableSensitiveDataLogging();
+    }
+
+    public class EmptyContext : DbContext
+    {
+        private readonly ITestOutputHelper _testOutputHelper;
+
+        public EmptyContext(ITestOutputHelper testOutputHelper)
+        {
+            _testOutputHelper = testOutputHelper;
+        }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+            => optionsBuilder
+                //.UseNpgsql("Server=127.0.0.1;Port=5432;Database=myDataBase;User Id=myUsername;Password=myPassword;")
+                //.UseSqlite(@"Data Source=c:\local\test.db")
+                //.UseInMemoryDatabase("Test")
+                // .UseLazyLoadingProxies()
+                .UseSqlServer(@"Data Source=(LocalDb)\MSSQLLocalDB;Database=AllTogetherNow")
+                .LogTo(_testOutputHelper.WriteLine, LogLevel.Information)
+                .EnableSensitiveDataLogging();
+    }
+}
+
 public class SqlServerEndToEndTest : IClassFixture<SqlServerFixture>
 {
     private const string DatabaseName = "SqlServerEndToEndTest";
